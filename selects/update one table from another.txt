@@ -1,0 +1,10 @@
+update gec.BYPSS_NUMS_LOG1 t1
+
+set (blocking_date, unblocking_date) = (select block_date, unblock_date
+
+from gec.TMP_DEL_FRAUD1 t2
+
+where trim(t1.calling_number) =
+
+trim(t2.anum))
+

@@ -1,0 +1,50 @@
+CREATE SEQUENCE S_MEDIAFON_TEST_ID  START WITH 1
+  INCREMENT BY 1
+
+
+CREATE OR REPLACE TRIGGER TR_MEDIAFON_BI
+  before insert on MEDIAFON 
+  for each row
+begin
+ --
+ select S_MEDIAFON_TEST_ID.nextval
+  into :new.test_id
+  from dual;
+ --
+end TR_MEDIAFON_BI;
+
+--------dareseteba
+SELECT S_MEDIAFON_TEST_ID.NEXTVAL FROM dual
+ALTER SEQUENCE S_MEDIAFON_TEST_ID INCREMENT BY 1
+--------end dareseteba
+
+insert into MEDIAFON
+select sysdate,TIME_OF_CALL, FROM_ROUTE, IC_PRESENT_IND, CLI_PERVICHNII_A_NUM, IC_CONN, FROM_NUMBER_OPRED_A_NUM, CALL_SETUP_TIME, BNUMBER, DURATION, CAUSE_CODE,S_MEDIAFON_TEST_ID.NEXTVAL from SATESTO_ZAREBI_A t where faili like'%18_21_mar_16%';
+commit;
+
+
+-----------------reset i
+SELECT S_MEDIAFON_TEST_ID.NEXTVAL FROM dual
+ALTER SEQUENCE S_MEDIAFON_TEST_ID INCREMENT BY - ricxvi rasac zeda seeqti gvazevs;
+
+
+
+CREATE TABLE departments (
+  ID           NUMBER(10)    NOT NULL,
+  DESCRIPTION  VARCHAR2(50)  NOT NULL);
+
+ALTER TABLE departments ADD (
+  CONSTRAINT dept_pk PRIMARY KEY (ID));
+
+CREATE SEQUENCE dept_seq;
+Trigger definition:
+
+CREATE OR REPLACE TRIGGER dept_bir 
+BEFORE INSERT ON departments 
+FOR EACH ROW
+
+BEGIN
+  SELECT dept_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;

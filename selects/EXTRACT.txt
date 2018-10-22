@@ -1,0 +1,7 @@
+select  EXTRACT( minute FROM run_duration ) ss,run_duration
+, t.*
+  from dba_scheduler_job_run_details t
+ where owner = 'GEC'
+   and req_start_date > sysdate - 30
+   and EXTRACT( minute FROM run_duration )>1
+ order by req_start_date desc

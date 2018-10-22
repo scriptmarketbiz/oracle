@@ -1,0 +1,53 @@
+select dbms_metadata.get_ddl('TABLE', table_name)
+from user_tables
+
+an
+
+select dbms_metadata.get_ddl('TABLE','A_NUM_ALARM_LOG','GEC') from dual
+
+
+an Command Window-shi vushvebt amas
+
+
+
+set serveroutput on;
+
+set feedback off;
+
+spool D:\ddl.sql;
+
+declare
+
+cursor tabs is
+
+select table_name
+
+from dba_tables
+
+where owner = 'GEC';
+
+--and rownum = 1;
+
+v_ddl clob;
+
+begin
+dbms_output.enable(1000000); 
+
+for tab in tabs loop
+
+select dbms_metadata.get_ddl('TABLE', tab.table_name, 'GEC') || ';'
+
+into v_ddl
+
+from dual;
+
+dbms_output.put_line(v_ddl);
+
+end loop;
+
+end;
+
+/
+
+spool off;
+

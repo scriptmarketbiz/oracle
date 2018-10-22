@@ -1,0 +1,1 @@
+grant select on gec.COLLECTOR_CDR_05_15 to eldar;

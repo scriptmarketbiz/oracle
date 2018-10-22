@@ -1,0 +1,13 @@
+select *from(
+select *from DBA_SCHEDULER_JOB_RUN_DETAILS where --job_name='BYPSS_NUMS_LOG_J'
+ log_date>sysdate-1 and status not in ('SUCCEEDED')
+order by log_date desc
+)
+
+union 
+select *from 
+(
+select *from USER_SCHEDULER_JOB_RUN_DETAILS where --job_name='BYPSS_NUMS_LOG_J'
+ log_date>sysdate-1 and status not in ('SUCCEEDED')
+order by log_date desc
+)

@@ -1,0 +1,24 @@
+and case
+         when lower(trim(opc)) = 'stp1' then
+          lower(trim(dpc))
+         else
+          '0'
+       end <> 'soft91'
+    and case
+         when lower(trim(opc)) = 'soft91' then
+          lower(trim(dpc))
+         else
+          '0'
+       end <> 'stp1'
+
+
+
+       select *-- count( *)
+  from saab_vs_interconect_20_e
+ where 1 = 1      
+   and case       
+         when length(trim(num_a_saab)) = 11 then         
+          num_a_saab       
+         else         
+          '0'    
+       end not like '3232%'

@@ -1,0 +1,7 @@
+select *
+  from TEST_TREE
+  where saxeli is not null
+start with
+  ufrosis_id =5
+connect by
+  prior id=ufrosis_id;

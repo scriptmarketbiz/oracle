@@ -1,0 +1,6 @@
+1)vnaxe partitioni romelsac qonda problema da gavige tablspace is saxeli
+select *from dba_tab_partitions where partition_name='ORG_CALLS_2018_P'
+2)vnaxe fali romlis zomis gazrdac  gvinda
+select *from dba_data_files where TABLESPACE_NAME='GEC_DATA'
+3)gavzarde zoma
+alter database datafile 'D:\ORACLE\ORADATA\LOGDB\GEC_DATA_01.DBF' resize 15000m;

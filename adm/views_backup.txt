@@ -1,0 +1,4 @@
+select dbms_metadata.get_ddl('VIEW', p.VIEW_NAME)
+
+from user_views p
+

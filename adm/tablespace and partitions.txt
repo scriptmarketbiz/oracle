@@ -1,0 +1,8 @@
+---gavigebt tablespace is saxels
+select * from dba_tab_partitions where table_name = 'TT_RECORD_ERN'
+
+---gavigebt tablespace  ra failebs iyenebs
+select *from dba_data_files where tablespace_name like '%TT_RECORD_ERN%'
+
+---sxva users mivcemt uflebas tablespace ze
+ALTER USER <user> quota unlimited on <tablespace name>;

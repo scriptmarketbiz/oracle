@@ -1,0 +1,42 @@
+with recs as
+ (select * from gec.TT_RECORDS partition(tt_Records_02_16) t)
+select *
+  from recs t1
+  left join recs t2
+    on t1.called_number = t2.called_number
+   and t2.out_com_trunk = 'STP2O'
+ where t1.in_com_trunk = 'STP1I'
+   and t2.in_com_trunk is null
+   
+   
+   ---------------------an
+
+with dro as
+ (select trunc(sysdate - 7) from dual),
+saabonento_gasvla as
+ (select *
+    from silk.vw_traffic_silk_silk@cboss
+   where dat >= (select * from dro)),
+saabonento_shemosvla as
+ (select *
+    from silk.vw_traffic_all_silk@cboss
+   where dat >= (select * from dro)),
+inerkonecti_gasvla as
+ (select *
+    from silk.vw_traffic_other_silk@cboss
+   where dat >= (select * from dro))
+select saabonento_gasvla.*,
+       saabonento_shemosvla.*,
+       inerkonecti_gasvla.*,
+       (saabonento_shemosvla.MINUTES - saabonento_gasvla.MINUTES -
+       inerkonecti_gasvla.MINUTES) sxvaoba,
+       round((saabonento_shemosvla.MINUTES - saabonento_gasvla.MINUTES -
+             inerkonecti_gasvla.MINUTES) / saabonento_shemosvla.MINUTES * 100,
+             4) sxvaoba_perc
+
+  from saabonento_shemosvla
+  left join inerkonecti_gasvla
+    on (saabonento_shemosvla.dat = inerkonecti_gasvla.dat)
+  left join saabonento_gasvla
+    on saabonento_shemosvla.dat = saabonento_gasvla.dat
+
