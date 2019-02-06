@@ -1,0 +1,35 @@
+begin
+SENDMAIL('test@test.ge', 'to@test.com', 'test e-mail from gec', 'test e-mail from gec', '' ); 
+end;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE SENDMAIL(
+  sender in varchar2,
+  recipient varchar2,
+  subj in varchar2,
+  BODY in varchar2,
+  cc_recipient in varchar2)
+IS
+
+  connection UTL_SMTP.Connection ;
+  v_reply UTL_SMTP.REPLY ;
+  message VARCHAR2(32767) ;
+  crlf VARCHAR2(2):=chr(13)||chr(10);
+
+
+BEGIN
+  connection := UTL_SMTP.open_connection('mail.silknet.com',25);
+  v_reply := UTL_SMTP.HELO(connection,'mail.silknet.com');
+  v_reply := UTL_SMTP.MAIL(connection,sender);
+  v_reply := UTL_SMTP.rcpt(connection,recipient);
+
+  IF cc_recipient is not null then UTL_SMTP.rcpt(connection,cc_recipient); END IF;
+
+  message :='Date: '|| sysdate ||crlf|| 'From: '||sender|| crlf||'To: '||recipient||crlf|| 'Cc: '||cc_recipient||crlf||'Subject: '||subj||crlf||''||crlf||BODY;
+
+  UTL_SMTP.DATA(connection,'MIME-Version: 1.0'||crlf||'Content-type: text/html' || crlf||message);
+  UTL_SMTP.QUIT(connection);
+END SENDMAIL;
