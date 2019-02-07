@@ -1,0 +1,32 @@
+create or replace procedure simbox_from_beeline_mail_send is
+msg varchar(2000);
+  
+
+   
+begin
+select 'gamarjoba'||chr(10)||chr(10)||replace(WM_CONCAT(' '||a||chr(10)),',','')||chr(10)||' moxvda sa...'||chr(10)||chr(10)||
+'
+message footer'
+  a_num INTO  msg
+  from mediafon_nums_log_geocell_send
+ where min_test_id >=
+       (select min_test_id
+          from mediafon_nums_send_max_test_id
+         where dro = (select max(dro) from mediafon_nums_send_max_test_id))
+   and max_test_id <=
+       (select max_test_id
+          from mediafon_nums_send_max_test_id
+         where dro = (select max(dro) from mediafon_nums_send_max_test_id))
+   and a not in
+       ((select distinct a from mediafon_nums_log_geocell_send where dro!=(select max(dro) from mediafon_nums_log_geocell_send)))
+       and operator=' Veon Georgia';
+  send_mail(p_to          => 'Beeline@silknet.com,Beeline@silknet.com',
+            p_from        => 'Beeline@silknet.com',
+            p_subject     => 'Simbox from Beeline',
+            
+            p_html_msg  => msg,          
+            p_smtp_host   => 'mail.mail.com',
+            p_smtp_port   => '25');
+            
+
+end simbox_from_beeline_mail_send;
