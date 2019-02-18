@@ -1,0 +1,4 @@
+begin
+as_xlsx.query2sheet( 'select * from dual' );
+as_xlsx.save( 'EXPDP_DIR', 'my.xlsx' );
+end;
