@@ -1,0 +1,516 @@
+Begin
+   send_email.send(
+   ToList=>             'adam@oracletool.com',
+   Subject=>            'Test email with attachments',
+   Body=>               'Here is the body',
+   FromEmail=>          'Adam@Oracletool.com',
+   FromHost=>           'Oracletool.com',
+   SMTPServer=>         'localhost',
+   AttachList=>         'send_email.sql,login.sql',
+   Directory=>          'ATTACHMENTS');
+End;
+
+
+
+
+Create or replace TYPE "SPLIT_TBL"  AS TABLE OF VARCHAR2(32767);
+
+CREATE OR REPLACE package send_file_email as
+
+   Function get_mime_type
+   (
+      FileName          in      varchar2
+   ) return varchar2;
+
+   Function split
+   (
+      p_list            in      varchar2,
+      p_del             in      varchar2 := ','
+   ) return split_tbl pipelined;
+
+   Procedure send (
+      Tolist            in      varchar2,
+      Subject           in      varchar2,
+      Body              in      varchar2,
+      FromEmail         in      varchar2 default 'DoNotReply@Nowhere.Com',
+      FromHost          in      varchar2 default utl_inaddr.get_host_name,
+      SmtpServer        in      varchar2 default 'localhost',
+      AttachList        in      varchar2 default null,
+      Directory         in      varchar2 default null
+   );
+
+End send_file_email;
+/
+
+Show error;
+
+CREATE OR REPLACE package body send_file_email as
+
+   Function get_mime_type
+   (
+      FileName          in      varchar2
+   ) return varchar2
+   is
+      NewFileName               varchar2(250);
+      type mime_type_arr        is table of varchar2(250) index by varchar2(20);
+      mime_types                mime_type_arr;
+      mime_type                 varchar2(250);
+      extension                 varchar2(250);
+      
+   begin
+      --
+      -- Populate the mime_types array
+      --
+      mime_types('323')         := 'text/h323';
+      mime_types('acx')         := 'application/internet-property-stream';
+      mime_types('ai')          := 'application/postscript';
+      mime_types('aif')         := 'audio/x-aiff';
+      mime_types('aifc')        := 'audio/x-aiff';
+      mime_types('aiff')        := 'audio/x-aiff';
+      mime_types('asf')         := 'video/x-ms-asf';
+      mime_types('asr')         := 'video/x-ms-asf';
+      mime_types('asx')         := 'video/x-ms-asf';
+      mime_types('au')          := 'audio/basic';
+      mime_types('avi')         := 'video/x-msvideo';
+      mime_types('axs')         := 'application/olescript';
+      mime_types('bas')         := 'text/plain';
+      mime_types('bcpio')       := 'application/x-bcpio';
+      mime_types('bin')         := 'application/octet-stream';
+      mime_types('bmp')         := 'image/bmp';
+      mime_types('c')           := 'text/plain';
+      mime_types('cat')         := 'application/vnd.ms-pkiseccat';
+      mime_types('cdf')         := 'application/x-cdf';
+      mime_types('cer')         := 'application/x-x509-ca-cert';
+      mime_types('class')       := 'application/octet-stream';
+      mime_types('clp')         := 'application/x-msclip';
+      mime_types('cmx')         := 'image/x-cmx';
+      mime_types('cod')         := 'image/cis-cod';
+      mime_types('cpio')        := 'application/x-cpio';
+      mime_types('crd')         := 'application/x-mscardfile';
+      mime_types('crl')         := 'application/pkix-crl';
+      mime_types('crt')         := 'application/x-x509-ca-cert';
+      mime_types('csh')         := 'application/x-csh';
+      mime_types('css')         := 'text/css';
+      mime_types('dcr')         := 'application/x-director';
+      mime_types('der')         := 'application/x-x509-ca-cert';
+      mime_types('dir')         := 'application/x-director';
+      mime_types('dll')         := 'application/x-msdownload';
+      mime_types('dms')         := 'application/octet-stream';
+      mime_types('doc')         := 'application/msword';
+      mime_types('dot')         := 'application/msword';
+      mime_types('dvi')         := 'application/x-dvi';
+      mime_types('dxr')         := 'application/x-director';
+      mime_types('eps')         := 'application/postscript';
+      mime_types('etx')         := 'text/x-setext';
+      mime_types('evy')         := 'application/envoy';
+      mime_types('exe')         := 'application/octet-stream';
+      mime_types('fif')         := 'application/fractals';
+      mime_types('flr')         := 'x-world/x-vrml';
+      mime_types('gif')         := 'image/gif';
+      mime_types('gtar')        := 'application/x-gtar';
+      mime_types('gz')          := 'application/x-gzip';
+      mime_types('h')           := 'text/plain';
+      mime_types('hdf')         := 'application/x-hdf';
+      mime_types('hlp')         := 'application/winhlp';
+      mime_types('hqx')         := 'application/mac-binhex40';
+      mime_types('hta')         := 'application/hta';
+      mime_types('htc')         := 'text/x-component';
+      mime_types('htm')         := 'text/html';
+      mime_types('html')        := 'text/html';
+      mime_types('htt')         := 'text/webviewhtml';
+      mime_types('ico')         := 'image/x-icon';
+      mime_types('ief')         := 'image/ief';
+      mime_types('iii')         := 'application/x-iphone';
+      mime_types('ins')         := 'application/x-internet-signup';
+      mime_types('isp')         := 'application/x-internet-signup';
+      mime_types('jfif')        := 'image/pipeg';
+      mime_types('jpe')         := 'image/jpeg';
+      mime_types('jpeg')        := 'image/jpeg';
+      mime_types('jpg')         := 'image/jpeg';
+      mime_types('js')          := 'application/x-javascript';
+      mime_types('latex')       := 'application/x-latex';
+      mime_types('lha')         := 'application/octet-stream';
+      mime_types('lsf')         := 'video/x-la-asf';
+      mime_types('lsx')         := 'video/x-la-asf';
+      mime_types('lzh')         := 'application/octet-stream';
+      mime_types('m13')         := 'application/x-msmediaview';
+      mime_types('m14')         := 'application/x-msmediaview';
+      mime_types('m3u')         := 'audio/x-mpegurl';
+      mime_types('man')         := 'application/x-troff-man';
+      mime_types('mdb')         := 'application/x-msaccess';
+      mime_types('me')          := 'application/x-troff-me';
+      mime_types('mht')         := 'message/rfc822';
+      mime_types('mhtml')       := 'message/rfc822';
+      mime_types('mid')         := 'audio/mid';
+      mime_types('mny')         := 'application/x-msmoney';
+      mime_types('mov')         := 'video/quicktime';
+      mime_types('movie')       := 'video/x-sgi-movie';
+      mime_types('mp2')         := 'video/mpeg';
+      mime_types('mp3')         := 'audio/mpeg';
+      mime_types('mpa')         := 'video/mpeg';
+      mime_types('mpe')         := 'video/mpeg';
+      mime_types('mpeg')        := 'video/mpeg';
+      mime_types('mpg')         := 'video/mpeg';
+      mime_types('mpp')         := 'application/vnd.ms-project';
+      mime_types('mpv2')        := 'video/mpeg';
+      mime_types('ms')          := 'application/x-troff-ms';
+      mime_types('mvb')         := 'application/x-msmediaview';
+      mime_types('nws')         := 'message/rfc822';
+      mime_types('oda')         := 'application/oda';
+      mime_types('p10')         := 'application/pkcs10';
+      mime_types('p12')         := 'application/x-pkcs12';
+      mime_types('p7b')         := 'application/x-pkcs7-certificates';
+      mime_types('p7c')         := 'application/x-pkcs7-mime';
+      mime_types('p7m')         := 'application/x-pkcs7-mime';
+      mime_types('p7r')         := 'application/x-pkcs7-certreqresp';
+      mime_types('p7s')         := 'application/x-pkcs7-signature';
+      mime_types('pbm')         := 'image/x-portable-bitmap';
+      mime_types('pdf')         := 'application/pdf';
+      mime_types('pfx')         := 'application/x-pkcs12';
+      mime_types('pgm')         := 'image/x-portable-graymap';
+      mime_types('pko')         := 'application/ynd.ms-pkipko';
+      mime_types('pma')         := 'application/x-perfmon';
+      mime_types('pmc')         := 'application/x-perfmon';
+      mime_types('pml')         := 'application/x-perfmon';
+      mime_types('pmr')         := 'application/x-perfmon';
+      mime_types('pmw')         := 'application/x-perfmon';
+      mime_types('pnm')         := 'image/x-portable-anymap';
+      mime_types('pot,')        := 'application/vnd.ms-powerpoint';
+      mime_types('ppm')         := 'image/x-portable-pixmap';
+      mime_types('pps')         := 'application/vnd.ms-powerpoint';
+      mime_types('ppt')         := 'application/vnd.ms-powerpoint';
+      mime_types('prf')         := 'application/pics-rules';
+      mime_types('ps')          := 'application/postscript';
+      mime_types('pub')         := 'application/x-mspublisher';
+      mime_types('qt')          := 'video/quicktime';
+      mime_types('ra')          := 'audio/x-pn-realaudio';
+      mime_types('ram')         := 'audio/x-pn-realaudio';
+      mime_types('ras')         := 'image/x-cmu-raster';
+      mime_types('rgb')         := 'image/x-rgb';
+      mime_types('rmi')         := 'audio/mid';
+      mime_types('roff')        := 'application/x-troff';
+      mime_types('rtf')         := 'application/rtf';
+      mime_types('rtx')         := 'text/richtext';
+      mime_types('scd')         := 'application/x-msschedule';
+      mime_types('sct')         := 'text/scriptlet';
+      mime_types('setpay')      := 'application/set-payment-initiation';
+      mime_types('setreg')      := 'application/set-registration-initiation';
+      mime_types('sh')          := 'application/x-sh';
+      mime_types('shar')        := 'application/x-shar';
+      mime_types('sit')         := 'application/x-stuffit';
+      mime_types('snd')         := 'audio/basic';
+      mime_types('spc')         := 'application/x-pkcs7-certificates';
+      mime_types('spl')         := 'application/futuresplash';
+      mime_types('src')         := 'application/x-wais-source';
+      mime_types('sst')         := 'application/vnd.ms-pkicertstore';
+      mime_types('stl')         := 'application/vnd.ms-pkistl';
+      mime_types('stm')         := 'text/html';
+      mime_types('svg')         := 'image/svg+xml';
+      mime_types('sv4cpio')     := 'application/x-sv4cpio';
+      mime_types('sv4crc')      := 'application/x-sv4crc';
+      mime_types('swf')         := 'application/x-shockwave-flash';
+      mime_types('t')           := 'application/x-troff';
+      mime_types('tar')         := 'application/x-tar';
+      mime_types('tcl')         := 'application/x-tcl';
+      mime_types('tex')         := 'application/x-tex';
+      mime_types('texi')        := 'application/x-texinfo';
+      mime_types('texinfo')     := 'application/x-texinfo';
+      mime_types('tgz')         := 'application/x-compressed';
+      mime_types('tif')         := 'image/tiff';
+      mime_types('tiff')        := 'image/tiff';
+      mime_types('tr')          := 'application/x-troff';
+      mime_types('trm')         := 'application/x-msterminal';
+      mime_types('tsv')         := 'text/tab-separated-values';
+      mime_types('txt')         := 'text/plain';
+      mime_types('uls')         := 'text/iuls';
+      mime_types('ustar')       := 'application/x-ustar';
+      mime_types('vcf')         := 'text/x-vcard';
+      mime_types('vrml')        := 'x-world/x-vrml';
+      mime_types('wav')         := 'audio/x-wav';
+      mime_types('wcm')         := 'application/vnd.ms-works';
+      mime_types('wdb')         := 'application/vnd.ms-works';
+      mime_types('wks')         := 'application/vnd.ms-works';
+      mime_types('wmf')         := 'application/x-msmetafile';
+      mime_types('wps')         := 'application/vnd.ms-works';
+      mime_types('wri')         := 'application/x-mswrite';
+      mime_types('wrl')         := 'x-world/x-vrml';
+      mime_types('wrz')         := 'x-world/x-vrml';
+      mime_types('xaf')         := 'x-world/x-vrml';
+      mime_types('xbm')         := 'image/x-xbitmap';
+      mime_types('xla')         := 'application/vnd.ms-excel';
+      mime_types('xlc')         := 'application/vnd.ms-excel';
+      mime_types('xlm')         := 'application/vnd.ms-excel';
+      mime_types('xls')         := 'application/vnd.ms-excel';
+      mime_types('xlt')         := 'application/vnd.ms-excel';
+      mime_types('xlw')         := 'application/vnd.ms-excel';
+      mime_types('xof')         := 'x-world/x-vrml';
+      mime_types('xpm')         := 'image/x-xpixmap';
+      mime_types('xwd')         := 'image/x-xwindowdump';
+      mime_types('z')           := 'application/x-compress';
+      mime_types('zip')         := 'application/zip';
+      --
+      -- Determine the file extension
+      --
+      dbms_output.put_line('Splitting file '||FileName||' to get extension.');
+      for i in (Select column_value as extension from table(split(FileName,'.'))) loop
+         extension := i.extension;
+      end loop;
+      --
+      -- use the extension to determine the MIME type
+      --
+      if mime_types.exists(extension) then
+         mime_type := mime_types(extension);
+      else
+         --
+         -- Default to 'text/plain' if not found
+         --
+         mime_type := 'text/plain';
+      end if;
+
+      dbms_output.put_line('Extension is '||extension);
+      dbms_output.put_line('mime_type is '||mime_type);
+        
+      return mime_type;
+
+   end get_mime_type;
+
+   Function split
+   (
+      p_list varchar2,
+      p_del varchar2 := ','
+   ) return split_tbl pipelined
+   is
+      l_idx    pls_integer;
+      l_list    varchar2(32767) := p_list;
+      l_value    varchar2(32767);
+   begin
+      loop
+         l_idx := instr(l_list,p_del);
+         if l_idx > 0 then
+            pipe row(substr(l_list,1,l_idx-1));
+            l_list := substr(l_list,l_idx+length(p_del));
+         else
+            pipe row(l_list);
+            exit;
+         end if;
+      end loop;
+      return;
+   end split;
+
+   Procedure send (
+      ToList            in      varchar2,
+      Subject           in      varchar2,
+      Body              in      varchar2,
+      FromEmail         in      varchar2 default 'DoNotReply@Nowhere.Com',
+      FromHost          in      varchar2 default utl_inaddr.get_host_name,
+      SmtpServer        in      varchar2 default 'localhost',
+      AttachList        in      varchar2 default null,
+      Directory         in      varchar2 default null
+    ) is
+
+      smtp            utl_smtp.CONNECTION;
+      reply           utl_smtp.REPLY;
+      file_handle     bfile;
+      file_exists     boolean;
+      block_size      number;
+      file_len        number;
+      pos             number;
+      total           number;
+      read_bytes      number;
+      data            raw(200);
+      my_code         number;
+      my_errm         varchar2(32767);
+      mime_type       varchar2(50);
+      myhostname      varchar2(255);
+      att_table       dbms_utility.uncl_array;
+      att_count       number;
+      tablen          binary_integer;
+      loopcount       number;
+
+       Procedure WriteLine(
+          line          in      varchar2 default null
+       ) is
+
+       Begin
+          utl_smtp.Write_Data( smtp, line||utl_tcp.CRLF );
+       End;
+
+    Begin
+
+      Select sys_context('USERENV','SERVER_HOST') into myhostname from dual;
+
+      dbms_output.put_line('ToList:     '||ToList);
+      dbms_output.put_line('Subject:    '||Subject);
+      dbms_output.put_line('Body:       '||Body);
+      dbms_output.put_line('FromEmail:  '||FromEmail);
+      dbms_output.put_line('SmtpServer: '||SmtpServer);
+      dbms_output.put_line('AttachList: '||AttachList);
+      dbms_output.put_line('Directory:  '||Directory);
+      dbms_output.put_line('ToList:     '||ToList);
+      dbms_output.put_line('myhostname: '||myhostname);
+
+      dbms_output.put_line('Opening connection to '||SmtpServer);
+      smtp := utl_smtp.OPEN_CONNECTION( SmtpServer, 25 );
+      reply := utl_smtp.HELO( smtp, myhostname);
+      reply := utl_smtp.MAIL( smtp, FromEmail );
+
+      --
+      -- Split up the recipient list
+      --
+      for i in (Select column_value as recipient from table(split(ToList))) loop
+         dbms_output.put_line('Recipient: '||i.recipient);
+         reply := utl_smtp.RCPT( smtp, i.recipient);
+      end loop;
+
+      reply := utl_smtp.open_data( smtp );
+
+      WriteLine( 'From: '||FromEmail);
+
+      --
+      -- Split up the recipient list (again)
+      --
+      for i in (Select column_value as recipient from table(split(ToList))) loop
+         WriteLine( 'To: '||i.recipient);
+      end loop;
+
+      WriteLine( 'Subject: '||Subject );
+      WriteLine( 'Content-Type: multipart/mixed; boundary="gc0p4Jq0M2Yt08jU534c0p"' );
+      WriteLine( 'MIME-Version: 1.0' );
+      WriteLine;
+
+      -- start of boundary payloads
+      WriteLine( '--gc0p4Jq0M2Yt08jU534c0p' );
+      WriteLine( 'Content-Type: text/plain' );
+      WriteLine;
+      WriteLine(  Body );
+      WriteLine;
+      WriteLine( '--gc0p4Jq0M2Yt08jU534c0p' );
+
+      dbms_output.put_line('Starting attachment segment');
+      dbms_output.put_line('Directory: '||Directory);
+      dbms_output.put_line('AttachList: '||AttachList);
+
+      --
+      -- Split up the attachment list
+      --
+      loopcount := 0; 
+      Select count(*) into att_count from table(split(AttachList));
+      if AttachList is not null and Directory is not null then
+         for i in (Select ltrim(rtrim(column_value)) as attachment from table(split(AttachList))) loop
+            loopcount := loopcount +1;
+            dbms_output.put_line('Attaching: '||Directory||'/'||i.attachment);
+            utl_file.fgetattr(Directory, i.attachment, file_exists, file_len, block_size);
+            if file_exists then
+               dbms_output.put_line('Getting mime_type for the attachment');
+               Select get_mime_type(i.attachment) into mime_type from dual;
+               WriteLine( 'Content-Type: '||mime_type );
+               WriteLine( 'Content-Transfer-Encoding: base64');
+               WriteLine( 'Content-Disposition: attachment; filename="'||i.attachment||'"' );
+               WriteLine;
+               file_handle := bfilename(Directory,i.attachment);
+               pos := 1;
+               total := 0;
+               file_len := dbms_lob.getlength(file_handle);
+               dbms_lob.open(file_handle,dbms_lob.lob_readonly);
+
+               loop
+                  if pos + 57 - 1 > file_len then
+                     read_bytes := file_len - pos + 1;
+                     --dbms_output.put_line('Last read - Start: '||pos);
+                  else
+                     --dbms_output.put_line('Reading - Start: '||pos);
+                     read_bytes := 57;
+                  end if;
+                  total := total + read_bytes;
+                  dbms_lob.read(file_handle,read_bytes,pos,data);
+                  utl_smtp.write_raw_data(smtp,utl_encode.base64_encode(data));
+                  --utl_smtp.write_raw_data(smtp,data);
+                  pos := pos + 57;
+                  if pos > file_len then
+                     exit;
+                  end if;
+               end loop;
+               dbms_output.put_line('Length was '||file_len);
+               dbms_lob.close(file_handle);
+               if (loopcount < att_count) then
+                  WriteLine;
+                  WriteLine( '--gc0p4Jq0M2Yt08jU534c0p' );
+                else
+                  WriteLine;
+                  WriteLine( '--gc0p4Jq0M2Yt08jU534c0p--' );
+                  dbms_output.put_line('Writing end boundary');
+                end if;
+            else
+               dbms_output.put_line('Skipping: '||Directory||'/'||i.attachment||'Does not exist.');
+            end if;
+         end loop;
+      end if;
+
+      reply := utl_smtp.close_data( smtp );
+      reply := utl_smtp.quit( smtp );
+
+   exception
+      when others then
+         my_code := sqlcode;
+         my_errm := sqlerrm;
+         dbms_output.put_line('Error code ' || my_code || ': ' || my_errm);
+  end;
+
+end send_file_email;
+/
+
+
+-------mxolod esec sakmarisi iyo rom emushava magram tu ar mushaobs qvevit rac iqneba egec unda gaketdes
+
+create or replace procedure create_acl(
+  aacl       varchar2,
+  acomment   varchar2,
+  aprincipal varchar2,
+  aisgrant   boolean,
+  aprivilege varchar2,
+  aserver    varchar2,
+  aport      number)
+is
+begin  
+  begin
+    DBMS_NETWORK_ACL_ADMIN.DROP_ACL(aacl);
+     dbms_output.put_line('ACL dropped.....'); 
+  exception
+    when others then
+      dbms_output.put_line('Error dropping ACL: '||aacl);
+      dbms_output.put_line(sqlerrm);
+  end;
+  begin
+    DBMS_NETWORK_ACL_ADMIN.CREATE_ACL(aacl,acomment,aprincipal,aisgrant,aprivilege);
+    dbms_output.put_line('ACL created.....'); 
+  exception
+    when others then
+      dbms_output.put_line('Error creating ACL: '||aacl);
+      dbms_output.put_line(sqlerrm);
+  end;  
+  begin
+    DBMS_NETWORK_ACL_ADMIN.ASSIGN_ACL(aacl,aserver,aport);
+    dbms_output.put_line('ACL assigned.....');         
+  exception
+    when others then
+      dbms_output.put_line('Error assigning ACL: '||aacl);
+      dbms_output.put_line(sqlerrm);
+  end;   
+  commit;
+  dbms_output.put_line('ACL commited.....'); 
+end;
+/
+show error
+
+begin
+  create_acl(
+    'adam_smtp_acl.xml',
+    'ACL for ADAM to allow SMTP outbound',
+    'ADAM',
+    TRUE,
+    'connect',
+    '*',
+    25);
+end;
+/
+
