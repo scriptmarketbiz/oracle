@@ -1,0 +1,3 @@
+create tablespace ss7_03_12_t datafile 'D:\ORACLE\ORADATA\LOGDB\ss7_03_12_t.dbf' size 2048m
+alter tablespace ss7_03_12_t add datafile 'D:\ORACLE\ORADATA\LOGDB\ss7_03_12_n2.DBF' size 2048m;
+alter tablespace ss7_03_12_t add datafile 'D:\ORACLE\ORADATA\LOGDB\ss7_03_12_n3.DBF' size 2048m autoextend on;

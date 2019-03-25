@@ -1,0 +1,5 @@
+V$sql v$sqltext v$sessions 
+
+create or replace view active_session_sql as
+select  SQL_FULLTEXT,t1.FIRST_LOAD_TIME,t2.SQL_EXEC_START,t1.LAST_ACTIVE_TIME,SQL_TEXT from V$sql t1 , v$session t2 where  t1.sql_id=t2.sql_id
+and t2.USERNAME='GEC' and t2.status='ACTIVE';
