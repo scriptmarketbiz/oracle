@@ -1,0 +1,74 @@
+select high_value,t.*from dba_tab_partitions t where table_name='CDRLOG'
+
+
+user_tab_partitions  cxrilidan 
+select * from (
+select table_name,
+       partition_name,
+       partition_position,
+       high_value,
+       gbatiashvili.longsubstr(tp.table_name, tp.partition_name) max_transac,
+       to_date(substr(gbatiashvili.longsubstr(tp.table_name, tp.partition_name),11,19),'YYYY-MM-DD hh24:MI:SS') max_transac_date
+  from dba_tab_partitions tp
+   where table_name = 'CDRLOG'
+    and TP.TABLE_OWNER = 'GBATIASHVILI'
+order by partition_position
+   )
+     where max_transac_date < sysdate - 100
+
+funqciis sheqmna
+
+CREATE OR REPLACE function GBATIASHVILI.longsubstr( 
+  p_table_name in varchar2,
+  p_partition_name in varchar2)
+return varchar2
+as
+   l_tmp long;
+begin
+   select high_value 
+     into l_tmp 
+   from user_tab_partitions 
+   where table_name = p_table_name
+    and partition_name = p_partition_name ;
+   return l_tmp;
+end;
+
+
+
+
+------gbatiashvili.cdrlog cxrilis partitionebis washla
+create or replace function gbatiashvili.l_todate(
+  p_table_name in varchar2,
+  p_partition_name in varchar2)
+return date
+as
+   l_tmp date;
+begin
+   select to_date(substr(gbatiashvili.longsubstr(tp.table_name, tp.partition_name),11,19),'YYYY-MM-DD hh24:MI:SS') 
+     into l_tmp 
+   from user_tab_partitions tp
+   where table_name = p_table_name
+    and partition_name = p_partition_name ;
+   return l_tmp;
+end;
+
+1)
+select 'ALTER TABLE '||table_owner||'.'||table_name||' DROP PARTITION '||partition_name||' UPDATE INDEXES;'
+from (select GBATIASHVILI.l_todate(t.table_name, t.partition_name) max_transac_date,
+t.*
+from dba_tab_partitions t
+where table_name = 'CDRLOG'  AND PARTITION_POSITION>1)
+where max_transac_date < sysdate - 100 
+
+
+
+
+
+ORG_CALLS is gasuftaveba
+
+select 'ALTER TABLE '||table_owner||'.'||table_name||' DROP PARTITION '||partition_name||' UPDATE INDEXES;'
+from (select GBATIASHVILI.l_todate(t.table_name, t.partition_name) max_transac_date,
+t.*
+from dba_tab_partitions t
+where table_name = 'ORG_CALLS'  AND PARTITION_POSITION>1)
+where max_transac_date < sysdate - 365 

@@ -1,0 +1,36 @@
+CREATE OR REPLACE PROCEDURE TURNCATE_OLD_PARTS
+IS
+  v_stmnt VARCHAR2(250);
+  CURSOR PART_NAME
+  IS
+    SELECT table_owner,
+      table_name,
+      partition_name,
+      partition_position,
+      partition_date
+    FROM
+      (SELECT table_owner,
+        table_name,
+        partition_name,
+        partition_position,
+        to_date(SUBSTR(longsubstr(table_owner,table_name,partition_name),11,10),'YYYY-MM-DD') partition_date
+      FROM all_tab_partitions
+      WHERE table_owner      = 'LOGSYS'
+      AND table_name        IN ('GEOCELL_LOGS','LOGS')
+      AND partition_position >1
+      );
+  --WHERE partition_date <=TRUNC(add_months(sysdate,-5),'MM');
+BEGIN
+  --DBMS_OUTPUT.ENABLE(1000000);
+  FOR part IN PART_NAME
+  LOOP
+    IF part.partition_date <= TRUNC(add_months(sysdate,-6),'MM') THEN
+      v_stmnt              := 'ALTER TABLE '||part.table_owner||'.'||part.table_name||' TRUNCATE PARTITION '||part.partition_name||' UPDATE INDEXES';
+      --DBMS_OUTPUT.PUT_LINE(v_stmnt);
+      EXECUTE immediate v_stmnt;
+    END IF;
+  END LOOP;
+EXCEPTION
+WHEN OTHERS THEN
+  GPMA.Send_Mail(vReceiver => 'DBA@gmail.ge', vSubject=>'Error Truncating Table Partition', vText =>'Stmnt: '||v_stmnt||SQLCODE||SQLERRM);
+END;
