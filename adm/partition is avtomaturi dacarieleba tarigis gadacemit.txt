@@ -1,0 +1,53 @@
+CREATE OR REPLACE PROCEDURE TURNCATE_OLD_PARTS_date(dat date)
+IS
+  v_stmnt VARCHAR2(250);
+  CURSOR PART_NAME
+  IS
+  SELECT table_owner,
+      table_name,
+      partition_name,
+      partition_position,
+      partition_date
+    FROM
+      (SELECT table_owner,
+        table_name,
+        partition_name,
+        partition_position,
+        to_date(SUBSTR(longsubstr(table_owner,table_name,partition_name),11,10),'YYYY-MM-DD') partition_date
+      FROM all_tab_partitions
+      WHERE table_owner      = 'FMSDATA'
+      AND table_name        IN ('QUASAR_NUMS_LOG_GEO')
+      AND partition_position >1
+      and  to_date(SUBSTR(longsubstr(table_owner,table_name,partition_name),11,10),'YYYY-MM-DD') =dat
+      );
+  --WHERE partition_date <=TRUNC(add_months(sysdate,-5),'MM');
+BEGIN
+  --DBMS_OUTPUT.ENABLE(1000000);
+  FOR part IN PART_NAME
+  LOOP
+ -- IF part.partition_date <= TRUNC(add_months(sysdate,-3),'MM') THEN
+      v_stmnt              := 'ALTER TABLE '||part.table_owner||'.'||part.table_name||' TRUNCATE PARTITION '||part.partition_name||' UPDATE INDEXES';
+      DBMS_OUTPUT.PUT_LINE(v_stmnt);
+      EXECUTE immediate v_stmnt;
+  --END IF;
+  END LOOP;
+EXCEPTION
+WHEN OTHERS THEN
+  --GPMA.Send_Mail(vReceiver => 'DBA@geocell.ge', vSubject=>'Error Truncating Table Partition', vText =>'Stmnt: '||v_stmnt||SQLCODE||SQLERRM);
+  
+  send_file_email.send(
+   ToList=>             'esologashvili@silknet.com',
+   Subject=>            'Error Truncating Table Partition',
+   Body=>               'Stmnt: '||v_stmnt||SQLCODE||SQLERRM,
+   FromEmail=>          'fraud@silknet.com',
+   FromHost=>           'Oracletool.com',
+   SMTPServer=>         'mail.silknet.com',
+   --AttachList=>          xlsx_file,
+   Directory=>          'EXPDP_DIR'
+   );
+   --DBMS_OUTPUT.ENABLE(1000000);
+   dbms_output.put_line('Error Truncating Table Partition');      
+  
+  
+
+end TURNCATE_OLD_PARTS_date;
